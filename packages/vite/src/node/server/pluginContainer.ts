@@ -484,7 +484,7 @@ export async function createPluginContainer(
         })
       )
     },
-
+    // ！！从根目录的index.html（入口文件）中开始解析文件，
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr

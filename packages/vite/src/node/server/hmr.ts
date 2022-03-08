@@ -44,14 +44,16 @@ export async function handleHMRUpdate(
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
-
+  // ！！判断是不是配置文件 以及 是否是配置文件的依赖
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === path.resolve(name)
   )
+  // ！！判断是不是.env配置环境变量的文件
   const isEnv =
     config.inlineConfig.envFile !== false &&
     (file === '.env' || file.startsWith('.env.'))
+  // ！！符合以上则重启服务，因为这三项会影响到vite的整体构建过程，比如配置文件更改得重新收集依赖是否符合预期
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
@@ -68,7 +70,7 @@ export async function handleHMRUpdate(
     }
     return
   }
-
+  // ！！若只是普通文件的改变，则走下面👇🏻的[file change] 逻辑
   debugHmr(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
@@ -91,7 +93,7 @@ export async function handleHMRUpdate(
     read: () => readModifiedFile(file),
     server
   }
-
+  // ！！遍历plugins中改变执行自定义热更新钩子的处理函数
   for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
       const filteredModules = await plugin.handleHotUpdate(hmrContext)
@@ -135,11 +137,12 @@ function updateModules(
   let needFullReload = false
 
   for (const mod of modules) {
+    // ！！判断mod模块是否有效？？
     invalidate(mod, timestamp, invalidatedModules)
     if (needFullReload) {
       continue
     }
-
+    // ？？判断边界 hasDeadEnd触达边界则全量更新
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
@@ -149,7 +152,7 @@ function updateModules(
       needFullReload = true
       continue
     }
-
+    // ！！把符合更新条件的模块文件加入updates数组，表明只需要更新updates里面的东西就行
     updates.push(
       ...[...boundaries].map(({ boundary, acceptedVia }) => ({
         type: `${boundary.type}-update` as Update['type'],

@@ -295,28 +295,34 @@ export interface ViteDevServer {
    */
   _pendingRequests: Map<string, Promise<TransformResult | null>>
 }
-
+// ！！开启服务
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
+  // ！！读取vite配置
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  // ！！获取项目根目录
   const root = config.root
+  // ！！获取服务配置
   const serverConfig = config.server
   const httpsOptions = await resolveHttpsConfig(
     config.server.https,
     config.cacheDir
   )
+  // ！！中间件的逻辑
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
   }
 
   const middlewares = connect() as Connect.Server
+  // ！！开启http服务
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+  // ！！开启WebSocket服务，并与http建立链接
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-
+  // ！！开启文件监听
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
     ignored: [
@@ -329,11 +335,11 @@ export async function createServer(
     disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
-
+  // ！！生成文件模块映射，热更新很关键
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr })
   )
-
+  // ！！构建一个vite插件的执行环境，对plugin的钩子进行处理
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 

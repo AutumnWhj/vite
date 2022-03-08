@@ -105,7 +105,7 @@ export async function resolveHttpServer(
   if (!httpsOptions) {
     return require('http').createServer(app)
   }
-
+  // ！！为啥存在代理proxy的时候不可以走http2 ？？
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
     return require('https').createServer(httpsOptions, app)
