@@ -1,3 +1,8 @@
+## <small>2.8.8 (2022-03-25)</small>
+
+
+
+
 ## <small>2.8.7 (2022-03-08)</small>
 
 * test:11 ([370403b](https://github.com/vitejs/vite/commit/370403b))
